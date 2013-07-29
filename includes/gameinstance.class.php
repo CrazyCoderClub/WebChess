@@ -49,7 +49,7 @@ class GameInstance
    */
   public function add_client($connection)
   {
-    if(!$this->is_full())
+    if($this->is_full())
     {
       return false;
     }
