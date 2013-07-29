@@ -1,15 +1,5 @@
 <?php
-/**
- * Created by JetBrains PhpStorm.
- * User: p.schmalenbach
- * Date: 25.07.13
- * Time: 11:20
- * To change this template use File | Settings | File Templates.
- */
-
 namespace Wrench\Application;
-
-
 use Wrench\Client;
 
 class GameInstance
@@ -44,15 +34,25 @@ class GameInstance
     }
   }
 
+  /*
+   * @return bool - true if this GameInstance is full false otherwise
+   */
   public function is_full()
   {
     return count($this->current_connections) == 2 ? true : false;
   }
 
+  /*
+   * Adds a client to this GameInstance if the game is not full
+   * @param $connection the client which should be added to the game
+   * @return bool true if the client could be successfully added to this GameInstance, false otherwise
+   */
   public function add_client($connection)
   {
-    if(count($this->current_connections) >= 2)
+    if(!$this->is_full())
+    {
       return false;
+    }
 
     $key = $connection->getPort();
 
@@ -62,6 +62,12 @@ class GameInstance
     return true;
   }
 
+  /*
+   * This method handles all incoming data for this GameInstance
+   * @param $data the json encoded string with the client action
+   * @param $connection the client which sent the data
+   * @return void but calls a method in which an appropriated answer will be sent to the client
+   */
   public function on_data($data, $connection)
   {
     if(!count($this->current_connections) == 2)
@@ -113,15 +119,28 @@ class GameInstance
     }
   }
 
+  /*
+   * This method invokes the actual game after to clients are connected, after that is it useless and keeps calling do_step
+   * which in turn does nothing
+   * TODO: Replace this with something more suitable
+   * @return void
+   */
   public function on_update()
   {
     if(count($this->current_connections) != 2)
       return;
 
     $this->do_step();
-
   }
 
+  /*
+   * Handles the case if an client disconnected, currently it just resets the GameInstance and removes the
+   * disconnected client from this GameInstance, also calls reset_all() which in turn disconnects the still
+   * connected client
+   * @param $connection the client who is not longer connected
+   * @return void
+   * TODO: Tell the still connected client that the opponent is not longer connected and that he has won
+   */
   public function on_disconnect($connection)
   {
     echo "disconnect \r\n";
@@ -139,6 +158,13 @@ class GameInstance
     }
   }
 
+  /*
+   * Echos the received message from one of clients back to him and to all other clients
+   * @param $connection the client who sent the message
+   * @param $msg the actual message
+   * @param $from the color of the player who sent the message
+   * @return void
+   */
   private function echo_msg_to_users($connection, $msg, $from)
   {
     foreach($this->current_connections as $client)
@@ -598,29 +624,42 @@ class GameInstance
 
   private function move_king($from, $to)
   {
-    $multiplier = $this->get_current_direction_multiplier();
-    $opponent = $this->get_opponent();
+
+    $allowed = $this->is_move_king_allowed($from, $to);
 
     $movement_result['success'] = false;
     $movement_result['msg'] = "You're king is not permitted to go there.";
 
+    // TODO: Find a better way to check for castling for the king
+    if(!$allowed)
+    {
+      $allowed = $this->check_castling($from, $to);
+    }
+
+    if($allowed)
+    {
+      $movement_result['msg'] = "";
+      $movement_result['success'] = $allowed;
+    }
+
+    return $movement_result;
+  }
+
+  private function is_move_king_allowed($from, $to)
+  {
+    $multiplier = $this->get_current_direction_multiplier();
+    $opponent = $this->get_opponent();
+    $movement_result = false;
+
     if( ( ($to - $from) == ($multiplier * 8) || ($to - $from) == ($multiplier * -8) ||
-      ($to - $from) == ($multiplier * 7) || ($to - $from) == ($multiplier * 9) ||
-      ($to - $from) == ($multiplier * -7) || ($to - $from) == ($multiplier * -9) ||
-      ($to - $from) == ($multiplier * -1) || ($to - $from) == ($multiplier * 1)) &&
+        ($to - $from) == ($multiplier * 7) || ($to - $from) == ($multiplier * 9) ||
+        ($to - $from) == ($multiplier * -7) || ($to - $from) == ($multiplier * -9) ||
+        ($to - $from) == ($multiplier * -1) || ($to - $from) == ($multiplier * 1)) &&
       isset($this->map[$to]) && ( $this->map[$to]['origin'] == $opponent || $this->map[$to]['type'] == "") )
     {
       $this->update_field_changes($from, $to, "K");
-      $movement_result['success'] = true;
+      $movement_result = true;
     }
-
-    if(!$movement_result['success'])
-    {
-      $movement_result['success'] = $this->check_castling($from, $to);
-    }
-
-    if($movement_result['success'])
-      $movement_result['msg'] = "";
 
     return $movement_result;
   }
@@ -736,9 +775,6 @@ class GameInstance
 
 
   /*
-   * @param $from Woher die Figuar kam -> Das Feld wird auf "leer" gesetzt
-   * @param $to wohin die Figur geht -> Das Feld wird auf den neuen Typ gesetzt
-   * @param $new_type Der Typ der Figur die bewegt wird.
    */
   private function update_field_changes($from, $to, $new_type, $bClear = true)
   {
