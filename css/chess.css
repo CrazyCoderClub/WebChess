@@ -107,3 +107,51 @@ form input {
     float: none;
   }
 }
+
+@media screen and (max-width: 361px){
+  #map {
+    display: inline-block;
+    width: 270px;
+    height: 270px;
+  }
+
+  .mapField {
+    min-height: 25px;
+    height: 25px;
+    min-width: 25px;
+    width: 25px;
+    font-size: 25px;
+    line-height: 25px;
+  }
+
+  .mapLabel {
+    width: 27px;
+    height: 27px;
+    font-size: 15px;
+  }
+
+  #gameLogHolder {
+    margin: 0;
+    width: 230px;
+  }
+
+  #gameArea, #infoArea {
+    min-width: inherit;
+  }
+
+  #networkForm, #chatForm {
+    margin: 10px 0 0 0px
+  }
+
+  #MsgSendField {
+    width: 137px;
+  }
+
+  #networkForm input {
+    width: 243px;
+  }
+
+  .chatTime {
+    display: none;
+  }
+}
