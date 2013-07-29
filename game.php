@@ -1,4 +1,4 @@
-<h1 class="text-center">Schach - Spiel der <strike>Könige</strike> Nerds</h1>
+<h1 class="text-center">Chess - Game of <strike>Kings</strike> Nerds</h1>
 
 <p></p>
 

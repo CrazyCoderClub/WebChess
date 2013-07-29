@@ -108,7 +108,9 @@ class GameInstance
         break;
 
       case 'user_msg':
-        $this->echo_msg_to_users($connection, $msg['msg'], $msg['from']);
+        if( !empty($msg['msg']) ) {
+          $this->echo_msg_to_users($connection, $msg['msg'], $msg['from']);
+        }
         break;
     }
   }

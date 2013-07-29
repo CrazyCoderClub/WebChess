@@ -1,11 +1,14 @@
+<?php
+header("Content-Type: text/html; charset=utf-8");
+?>
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <title>Chess</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
-    <meta name="author" content="">
+    <meta name="author" content="WebChessClub">
 
     <!-- Le styles -->
     <link href="css/bootstrap.css" rel="stylesheet">
@@ -41,10 +44,16 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="brand" href="#">Chess</a>
+          <a class="brand" href="/">Chess</a>
           <div class="nav-collapse collapse">
             <ul class="nav">
-              <li class="active"><a href="#">Home</a></li>
+            <?php if( empty( $_GET['action'] ) || $_GET['action'] == 'game' ) { ?>
+              <li class="active"><a href="/game">Game</a></li>
+              <li><a href="?action=about">About</a></li>
+            <?php } elseif( $_GET['action'] == 'about' ) { ?>
+              <li><a href="?action=game">Game</a></li>
+              <li class="active"><a href="?action=about">About</a></li>
+            <?php } ?>
             </ul>
           </div><!--/.nav-collapse -->
         </div>
@@ -53,7 +62,11 @@
 
     <div class="container">
 
-      <?php require('./content.php'); ?>
+      <?php if( empty( $_GET['action'] ) || $_GET['action'] == 'game' ) { ?>
+        <?php require('./game.php'); ?>
+      <?php } elseif( $_GET['action'] == 'about' ) { ?>
+        <?php require('./about.php'); ?>
+      <?php } ?>
 
     </div> <!-- /container -->
 

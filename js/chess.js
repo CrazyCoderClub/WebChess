@@ -1,6 +1,5 @@
 var map = new Map();
 var game = new Game();
-var currentSelection = null;
 
 window.onbeforeunload = function() {
   if( game.isConnected ) {
@@ -25,8 +24,10 @@ $(document).ready(function(){
   {
     if($('#MsgSendField').length == 1)
     {
-      game.send_user_msg($('#MsgSendField').val());
-      $('#MsgSendField').val("");
+      if( $('#MsgSendField').val() != '' ) {
+        game.send_user_msg($('#MsgSendField').val());
+        $('#MsgSendField').val("");
+      }
     }
 
     e.preventDefault();
@@ -47,6 +48,7 @@ Game.prototype.isConnected = false;
 Game.prototype.user = null;
 Game.prototype.activeUser = null;
 Game.prototype.started = false;
+Game.prototype.currentSelection = null;
 
 Game.prototype.turn = function( from, to ) {
   this.ws.send( JSON.stringify({
@@ -348,22 +350,21 @@ Map.prototype.render = function() {
   if( game.activeUser != null ) {
     game.log("<b>" + game.activeUser + "'s turn</b>");
   }
-
-
+  
   $('.mapField').on('click',function(){
-    if( currentSelection != this && currentSelection == null ) {
-      currentSelection = this;
+    if( game.currentSelection != this && game.currentSelection == null ) {
+      game.currentSelection = this;
       $(this).addClass('fieldActive');
-    } else if( currentSelection == this ) {
-      currentSelection = null;
+    } else if( game.currentSelection == this ) {
+      game.currentSelection = null;
       $('.mapField').removeClass('fieldActive');
-    } else if( currentSelection != this && currentSelection != null ) {
-      var from = $( currentSelection ).attr('id').replace(/field_/, '');
+    } else if( game.currentSelection != this && game.currentSelection != null ) {
+      var from = $( game.currentSelection ).attr('id').replace(/field_/, '');
       var to = $( this ).attr('id').replace(/field_/, '');
 
       game.turn( from, to );
 
-      currentSelection = null;
+      game.currentSelection = null;
     }
   });
 }
