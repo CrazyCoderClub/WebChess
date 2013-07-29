@@ -1,0 +1,109 @@
+#map {
+  display: inline-block;
+  width: 526px;
+  height: 526px;
+}
+
+.mapField {
+  float: left;
+  display: inline-block;
+  min-height: 50px;
+  height: 50px;
+  min-width: 50px;
+  width: 50px;
+  border: 1px solid #efefef;
+  text-align: center;
+  cursor: pointer;
+  font-size: 50px;
+  line-height: 50px;
+}
+
+.mapField:hover {
+  border: 1px dashed #ff0000;
+}
+
+.fieldActive {
+  border: 1px solid #ff0000;
+}
+
+.mapField_black {
+  background: #666666;
+}
+
+.mapField_white {
+  background: #ffffff;
+}
+
+.fieldType_white {
+  /* color: #bbbbbb; */
+  color: #000000;
+}
+
+.fieldType_black {
+  color: #000000;
+}
+
+#ownUser {
+  padding: 0 0 5px 20px;
+  display: none;
+}
+
+#gameLogHolder {
+  height: 430px;
+  width: 513px;
+  overflow: auto;
+  margin: 0 0 0 25px;
+  text-align: left;
+}
+
+#MsgSendField {
+    width: 417px;
+}
+
+#MsgSendButton {
+    width: 95px;
+    margin-left: 5px;
+}
+
+#log {
+  display: none;
+}
+
+table td {
+  vertical-align: top;
+}
+
+form input {
+  vertical-align: top !important;
+}
+
+.mapLabel {
+  width: 52px;
+  height: 52px;
+  font-size: 25px;
+  border: 0 none !important;
+  color: #cccccc;
+}
+
+#networkForm, #chatForm {
+  margin: 10px 0 0 25px;
+}
+
+#networkForm input {
+  width: 230px;
+}
+
+#gameArea, #infoArea {
+  min-width: 516px;
+  float: left;
+}
+
+@media screen and (max-width: 1199px){
+  #gameLogHolder {
+    height: 150px;
+  }
+
+  #gameArea, #infoArea {
+    float: none;
+  }
+}
