@@ -119,6 +119,10 @@ Game.prototype.connect = function( target ) {
         break;
 
       case 'map_delivery':
+        if( self.activeUser != json.active_user ) {
+          $('#turnAudio')[0].play();
+        }
+      
         self.setActiveUser( json.active_user );
         self.setStarted( true );
 
@@ -162,6 +166,7 @@ Game.prototype.connect = function( target ) {
 
         if(json.from != game.user)
         {
+          $('#chatAudio')[0].play();
           game.log("<i>" + from + ": "+ json.msg + "</i>");
         }
         else
