@@ -108,7 +108,7 @@ form input {
   }
 }
 
-@media screen and (max-width: 361px){
+@media screen and (max-width: 617px){
   #map {
     display: inline-block;
     width: 270px;
