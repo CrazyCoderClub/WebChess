@@ -35,7 +35,7 @@ class GameInstance
     }
   }
 
-  /*
+  /**
    * @return bool - true if this GameInstance is full false otherwise
    */
   public function is_full()
@@ -43,9 +43,9 @@ class GameInstance
     return count($this->current_connections) == 2 ? true : false;
   }
 
-  /*
+  /**
    * Adds a client to this GameInstance if the game is not full
-   * @param $connection the client which should be added to the game
+   * @param object $connection the client which should be added to the game
    * @return bool true if the client could be successfully added to this GameInstance, false otherwise
    */
   public function add_client($connection)
@@ -63,11 +63,11 @@ class GameInstance
     return true;
   }
 
-  /*
-   * This method handles all incoming data for this GameInstance
-   * @param $data the json encoded string with the client action
-   * @param $connection the client which sent the data
-   * @return void but calls a method in which an appropriated answer will be sent to the client
+  /**
+   * This method handles all incoming data for this GameInstance.
+   * Return void but calls a method in which an appropriated answer will be sent to the client.
+   * @param string $data the json encoded string with the client action
+   * @param object $connection the client which sent the data
    */
   public function on_data($data, $connection)
   {
@@ -79,13 +79,13 @@ class GameInstance
     switch($msg['action'])
     {
       case 'map_request':
-        $this->send_action_to_client($connection, "map_delivery");
+        $this->send_map_delivery($connection);
         break;
 
       case 'turn':
         if($this->current_connections[$connection->getPort()]['color'] != $this->current_turn)
         {
-          $this->send_action_to_client($connection, "map_delivery");
+          $this->send_map_delivery($connection);
           $this->send_warning_to_client($connection, "It's not your turn, please wait ...");
           break;
         }
@@ -108,31 +108,51 @@ class GameInstance
           {
             $this->send_movement_to_client($client, $from, $to);
 
-            $this->send_action_to_client($client['connection'], "map_delivery");
+            $this->send_map_delivery($client['connection']);
           }
 
           $this->checkVitory();
+
+          $this->sendCheckIfNecessary();
         }
         else
         {
-          $this->send_action_to_client($connection, "map_delivery");
+          $this->send_map_delivery($connection);
           $this->send_warning_to_client($connection, $movement_result['msg']);
         }
         break;
 
       case 'user_msg':
         if( !empty($msg['msg']) ) {
-          $this->echo_msg_to_users($connection, $msg['msg'], $msg['from']);
+          $this->echo_msg_to_users($msg['msg'], $msg['from']);
         }
         break;
     }
   }
 
-  /*
+  /**
+   * Send check messages if a king is in danger
+   */
+  private function sendCheckIfNecessary() {
+    foreach( $this->map as $iFieldPosition => $aMapItem ) {
+      if( !empty($aMapItem['type']) && $aMapItem['type'] == 'K' ) {
+
+        if( $this->checkFieldInDanger( self::COLOR_BLACK, $iFieldPosition ) ) {
+          $this->echo_msg_to_users("check!", self::COLOR_WHITE);
+          break;
+        } elseif( $this->checkFieldInDanger( self::COLOR_WHITE, $iFieldPosition ) ) {
+          $this->echo_msg_to_users("check!", self::COLOR_BLACK);
+          break;
+        }
+
+      }
+    }
+  }
+
+  /**
    * This method invokes the actual game after to clients are connected, after that is it useless and keeps calling do_step
    * which in turn does nothing
    * TODO: Replace this with something more suitable
-   * @return void
    */
   public function on_update()
   {
@@ -142,13 +162,12 @@ class GameInstance
     $this->do_step();
   }
 
-  /*
+  /**
    * Handles the case if an client disconnected, currently it just resets the GameInstance and removes the
    * disconnected client from this GameInstance, also calls reset_all() which in turn disconnects the still
    * connected client
-   * @param $connection the client who is not longer connected
-   * @return void
    * TODO: Tell the still connected client that the opponent is not longer connected and that he has won
+   * @param object $connection the client who is not longer connected
    */
   public function on_disconnect($connection)
   {
@@ -167,14 +186,12 @@ class GameInstance
     }
   }
 
-  /*
+  /**
    * Echos the received message from one of clients back to him and to all other clients
-   * @param $connection the client who sent the message
-   * @param $msg the actual message
-   * @param $from the color of the player who sent the message
-   * @return void
+   * @param string $msg the actual message
+   * @param string $from the color of the player who sent the message
    */
-  private function echo_msg_to_users($connection, $msg, $from)
+  private function echo_msg_to_users($msg, $from)
   {
     foreach($this->current_connections as $client)
     {
@@ -186,11 +203,20 @@ class GameInstance
     }
   }
 
+  /**
+   * updates former map with current map for difference check
+   */
   private function update_former_map()
   {
     $this->former_map = $this->map;
   }
 
+  /**
+   * Calculates the differences between former and current map
+   * @param object $connection
+   * @param int $from
+   * @param int $to
+   */
   private function send_movement_to_client($connection, $from, $to)
   {
     $differences = array();
@@ -199,7 +225,6 @@ class GameInstance
     $differences['removed_figure'] = "";
     $differences['switched'] = false;
     $differences['new_figure'] = "";
-
 
     if(
     (
@@ -250,29 +275,160 @@ class GameInstance
       }
     }
 
-      $connection['connection']->send(json_encode(
-        array
-        (
-          "action" => "movement",
-          "who" => $this->get_opponent(),
-          "moved_figure" =>  $differences['moved_figure'],
-          "from_field" => $from,
-          "to_field" => $to,
-          "former_figure" => $differences['former_figure'],
-          "switched" => $differences['switched'],
-          "new_figure" => $differences['new_figure'],
-        )
-      ));
-
-
+    $connection['connection']->send(json_encode(
+      array
+      (
+        "action" => "movement",
+        "who" => $this->get_opponent(),
+        "moved_figure" =>  $differences['moved_figure'],
+        "from_field" => $from,
+        "to_field" => $to,
+        "former_figure" => $differences['former_figure'],
+        "switched" => $differences['switched'],
+        "new_figure" => $differences['new_figure'],
+      )
+    ));
   }
 
+  /**
+   * Change current player to opponent
+   */
   private function update_current_turn()
   {
     $this->current_turn = $this->current_turn == self::COLOR_WHITE ? self::COLOR_BLACK : self::COLOR_WHITE;
   }
 
+  /**
+   * Executes the movement of the figures if possible
+   * @param string $szType
+   * @param int $iFrom
+   * @param int $iTo
+   * @return array
+   */
+  private function move( $szType, $iFrom, $iTo ) {
+    $movement_valid = array();
 
+    switch( $szType )
+    {
+      case 'T':
+        $movement_valid = $this->move_rook($iFrom, $iTo);
+        break;
+
+      case 'S':
+        $movement_valid = $this->move_knight($iFrom, $iTo);
+        break;
+
+      case 'L':
+        $movement_valid = $this->move_bishop($iFrom, $iTo);
+        break;
+
+      case 'K':
+        $movement_valid = $this->move_king($iFrom, $iTo);
+        break;
+
+      case 'D':
+        $movement_valid = $this->move_queen($iFrom, $iTo);
+        break;
+
+      case 'B':
+        $movement_valid = $this->move_pawn($iFrom, $iTo);
+        break;
+      case "":
+        $movement_valid['success'] = false;
+        $movement_valid['msg'] = "You cannot move an empty field.";
+        break;
+
+      default:
+        $movement_valid['success'] = false;
+        $movement_valid['msg'] = "Map seems to be outdated..., try again.";
+        break;
+    }
+
+    return $movement_valid;
+  }
+
+  /**
+   * Returns an array with movement success information
+   * @param string $szType
+   * @param int $iFrom
+   * @param int $iTo
+   * @return array
+   */
+  private function is_move_allowed( $szType, $iFrom, $iTo ) {
+    $movement_valid = array(
+      'success' => false,
+      'msg' => ''
+    );
+
+    switch( $szType )
+    {
+      case 'T':
+        $movement_valid['success'] = $this->is_move_rook_allowed($iFrom, $iTo);
+        break;
+
+      case 'S':
+        $movement_valid['success'] = $this->is_move_knight_allowed($iFrom, $iTo);
+        break;
+
+      case 'L':
+        $movement_valid['success'] = $this->is_move_bishop_allowed($iFrom, $iTo);
+        break;
+
+      case 'K':
+        $movement_valid['success'] = $this->is_move_king_allowed($iFrom, $iTo);
+        break;
+
+      case 'D':
+        $movement_valid['success'] = $this->is_move_queen_allowed($iFrom, $iTo);
+        break;
+
+      case 'B':
+        $movement_valid['success'] = $this->is_move_pawn_allowed($iFrom, $iTo);
+        break;
+      case "":
+        $movement_valid['success'] = false;
+        $movement_valid['msg'] = "You cannot move an empty field.";
+        break;
+
+      default:
+        $movement_valid['success'] = false;
+        $movement_valid['msg'] = "Map seems to be outdated..., try again.";
+        break;
+    }
+
+   return $movement_valid['success'];
+  }
+
+  /**
+   * Returns ture if the filed can be conquered
+   * @param string $origin
+   * @param int $iPositionDefender
+   * @return bool
+   */
+  private function checkFieldInDanger( $origin, $iPositionDefender ) {
+    // function does not work correctly :(
+    return false;
+
+    $oldOrigin = $this->current_turn;
+    $this->current_turn = $this->get_opponent( $origin );
+
+    foreach( $this->map as $iPositionAttacker => $aMapItem ) {
+      if( !empty($aMapItem['origin']) && $aMapItem['origin'] != $origin && $iPositionDefender != $iPositionAttacker ) {
+        $bAllowed = $this->is_move_allowed( $aMapItem['type'], $iPositionAttacker, $iPositionDefender );
+
+        if( $bAllowed ) {
+          $this->current_turn = $oldOrigin;
+          return true;
+        }
+      }
+    }
+    $this->current_turn = $oldOrigin;
+    return false;
+  }
+
+  /**
+   * Checks for game over and send game over message
+   */
   private function checkVitory() {
     $bWhiteKing = false;
     $bBlackKing = false;
@@ -307,47 +463,18 @@ class GameInstance
     }
   }
 
+  /**
+   * Proccess the client moment actions
+   * @param string $msg
+   * @return array
+   */
   private function process_client_movement($msg)
   {
     $movement_valid = array("success" => false, "msg" => "undefined server error, please try again.");
 
     if($this->map[$msg['from']]['origin'] == $this->current_turn)
     {
-      switch($this->map[$msg['from']]['type'])
-      {
-        case 'T':
-          $movement_valid = $this->move_rook($msg['from'], $msg['to']);
-          break;
-
-        case 'S':
-          $movement_valid = $this->move_knight($msg['from'], $msg['to']);
-          break;
-
-        case 'L':
-          $movement_valid = $this->move_bishop($msg['from'], $msg['to']);
-          break;
-
-        case 'K':
-          $movement_valid = $this->move_king($msg['from'], $msg['to']);
-          break;
-
-        case 'D':
-          $movement_valid = $this->move_queen($msg['from'], $msg['to']);
-          break;
-
-        case 'B':
-          $movement_valid = $this->move_pawn($msg['from'], $msg['to']);
-          break;
-        case "":
-          $movement_valid['success'] = false;
-          $movement_valid['msg'] = "You cannot move an empty field.";
-          break;
-
-        default:
-          $movement_valid['success'] = false;
-          $movement_valid['msg'] = "Map seems to be outdated..., try again.";
-          break;
-      }
+      $movement_valid = $this->move( $this->map[$msg['from']]['type'], $msg['from'], $msg['to'] );
     }
 
     if( $movement_valid['success'] ) {
@@ -359,10 +486,23 @@ class GameInstance
     return $movement_valid;
   }
 
+  /**
+   * Returns true if the queen can move to field
+   * @param int $from
+   * @param int $to
+   * @return bool
+   */
   private function is_move_queen_allowed( $from, $to ) {
     return $this->is_move_bishop_allowed( $from, $to ) || $this->is_move_rook_allowed( $from, $to );
   }
 
+
+  /**
+   * Moves the queen
+   * @param int $from
+   * @param int $to
+   * @return array
+   */
   private function move_queen( $from, $to ) {
     $allowed = $this->is_move_queen_allowed( $from, $to );
 
@@ -381,6 +521,12 @@ class GameInstance
     return $movement_result;
   }
 
+  /**
+   * Return movement information of the bishop
+   * @param int $from
+   * @param int $to
+   * @return bool
+   */
   private function is_move_bishop_allowed( $from, $to ) {
     $multiplier = $this->get_current_direction_multiplier();
     $opponent = $this->get_opponent();
@@ -447,6 +593,12 @@ class GameInstance
     return $allowed;
   }
 
+  /**
+   * Moves the Bishop
+   * @param int $from
+   * @param int $to
+   * @return array
+   */
   private function move_bishop($from, $to)
   {
     $allowed = $this->is_move_bishop_allowed( $from, $to );
@@ -466,6 +618,12 @@ class GameInstance
     return $movement_result;
   }
 
+  /**
+   * Returns true if the knight can move to field
+   * @param int $from
+   * @param int $to
+   * @return bool
+   */
   private function is_move_knight_allowed( $from, $to ) {
     $multiplier = $this->get_current_direction_multiplier();
     $opponent = $this->get_opponent();
@@ -490,6 +648,12 @@ class GameInstance
     return $allowed;
   }
 
+  /**
+   * Moves the Knight
+   * @param int $from
+   * @param int $to
+   * @return array
+   */
   private function move_knight($from, $to)
   {
     $allowed = $this->is_move_knight_allowed( $from, $to );
@@ -509,6 +673,12 @@ class GameInstance
     return $movement_result;
   }
 
+  /**
+   * Returns true if the rook can move to field
+   * @param int $from
+   * @param int $to
+   * @return bool
+   */
   private function is_move_rook_allowed($from, $to)
   {
     $opponent = $this->get_opponent();
@@ -562,6 +732,12 @@ class GameInstance
     return $allowed;
   }
 
+  /**
+   * Moves the Rook
+   * @param int $from
+   * @param int $to
+   * @return array
+   */
   private function move_rook($from, $to)
   {
     $allowed = $this->is_move_rook_allowed($from, $to);
@@ -586,7 +762,12 @@ class GameInstance
     return $movement_result;
   }
 
-
+  /**
+   * Returns true if rook and king can be switched
+   * @param int $from
+   * @param int $to
+   * @return bool
+   */
   private function check_castling($from, $to)
   {
     $multiplier = $this->get_current_direction_multiplier();
@@ -633,10 +814,26 @@ class GameInstance
     return $allowed;
   }
 
+  /**
+   * Moves the king
+   * @param int $from
+   * @param int $to
+   * @return array
+   */
   private function move_king($from, $to)
   {
-
     $allowed = $this->is_move_king_allowed($from, $to);
+
+    $movement_result = array();
+
+    if( $allowed ) {
+      if( $this->checkFieldInDanger( $this->current_turn, $to ) ) {
+        $movement_result['success'] = false;
+        $movement_result['msg'] = 'Your King can not be moved to a field where he can be conquered';
+
+        return $movement_result;
+      }
+    }
 
     $movement_result['success'] = false;
     $movement_result['msg'] = "You're king is not permitted to go there.";
@@ -649,6 +846,7 @@ class GameInstance
 
     if($allowed)
     {
+      $this->update_field_changes($from, $to, "K");
       $movement_result['msg'] = "";
       $movement_result['success'] = $allowed;
     }
@@ -656,6 +854,12 @@ class GameInstance
     return $movement_result;
   }
 
+  /**
+   * Returns true if the king can move to field
+   * @param int $from
+   * @param int $to
+   * @return bool
+   */
   private function is_move_king_allowed($from, $to)
   {
     $multiplier = $this->get_current_direction_multiplier();
@@ -668,13 +872,75 @@ class GameInstance
         ($to - $from) == ($multiplier * -1) || ($to - $from) == ($multiplier * 1)) &&
       isset($this->map[$to]) && ( $this->map[$to]['origin'] == $opponent || $this->map[$to]['type'] == "") )
     {
-      $this->update_field_changes($from, $to, "K");
       $movement_result = true;
     }
 
     return $movement_result;
   }
 
+  /**
+   * Returns true if the pawn can move to field
+   * @param int $from
+   * @param int $to
+   * @return bool
+   */
+  private function is_move_pawn_allowed( $from, $to ) {
+    $multiplier = $this->get_current_direction_multiplier();
+    $opponent = $this->get_opponent();
+    $allowed = false;
+
+    if( ( $to - $from ) == ($multiplier * 8) && $this->map[$to]['type'] == "")
+    {
+      $allowed = true;
+    }
+    else if( $this->map[$from]['moved'] === false && ( $to - $from ) == ($multiplier * 16)
+      && $this->map[$to]['type'] == "" && $this->map[$from + ($multiplier * 8)]['type'] == "" )
+    {
+      $allowed = true;
+    }
+    else if( ($to - $from) == ($multiplier * 7) && $this->map[$from + ($multiplier * 7)]['origin'] == $opponent
+      || ($to - $from) == ($multiplier * 9) && $this->map[$from + ($multiplier * 9)]['origin'] == $opponent)
+    {
+      $allowed = true;
+    } elseif( // en passant
+      $this->last_pawn_double_move[ $opponent ] != -1
+      &&
+      (
+        (
+          ( $this->last_pawn_double_move[ $opponent ] > $from && $this->last_pawn_double_move[ $opponent ] == $from+1 )
+          &&
+          (
+            $multiplier < 0 && $to - $from == 7 * $multiplier
+            ||
+            $multiplier > 0 && $to - $from == 9 * $multiplier
+          )
+        )
+        ||
+        (
+          ( $this->last_pawn_double_move[ $opponent ] < $from && $this->last_pawn_double_move[ $opponent ] == $from-1 )
+          &&
+          (
+            $multiplier < 0 && $to - $from == 9 * $multiplier
+            ||
+            $multiplier > 0 && $to - $from == 7 * $multiplier
+          )
+        )
+      )
+    ) {
+      $this->update_field_changes($from, $to, "B");
+      $this->update_field_changes($this->last_pawn_double_move[ $opponent ], $this->last_pawn_double_move[ $opponent ], "");
+      $allowed = true;
+    }
+
+    return $allowed;
+  }
+
+  /**
+   * Moves the pawn
+   * @param int $from
+   * @param int $to
+   * @return array
+   */
   private function move_pawn($from, $to)
   {
     $multiplier = $this->get_current_direction_multiplier();
@@ -730,7 +996,6 @@ class GameInstance
       $movement_result['success'] = true;
     }
 
-
     if($movement_result['success']) {
       $movement_result['msg'] = "";
 
@@ -754,6 +1019,11 @@ class GameInstance
     return $movement_result;
   }
 
+  /**
+   * Return the best defeated figure of the player
+   * @param string $szPlayer
+   * @return string
+   */
   private function getBestLostFigure( $szPlayer ) {
     $szBest = 1;
     foreach( $this->defeated_figures[$szPlayer] as $szFigure => $iCount ) {
@@ -785,7 +1055,12 @@ class GameInstance
   }
 
 
-  /*
+  /**
+   * Executes a figure move operation
+   * @param int $from position
+   * @param int $to position
+   * @param string $new_type figure
+   * @param bool $bClear if true the field is set to empty after move
    */
   private function update_field_changes($from, $to, $new_type, $bClear = true)
   {
@@ -802,21 +1077,33 @@ class GameInstance
     }
   }
 
-  private function get_opponent()
+  /**
+   * Return the current opponent color
+   * @param string|null $current
+   * @return string
+   */
+  private function get_opponent( $current = NULL )
   {
-    return $this->current_turn == self::COLOR_WHITE ? self::COLOR_BLACK : self::COLOR_WHITE;
+    if( is_null( $current ) ) {
+      $current = $this->current_turn;
+    }
+    return $current == self::COLOR_WHITE ? self::COLOR_BLACK : self::COLOR_WHITE;
   }
 
+  /**
+   * Returns the current pawn move direction
+   * @return int
+   */
   private function get_current_direction_multiplier()
   {
     return $this->current_turn == self::COLOR_WHITE ? 1 : -1;
   }
 
-  private function get_start_field()
-  {
-    return $this->current_turn == self::COLOR_WHITE ? 0 : 63;
-  }
-
+  /**
+   * Send a warn message to a specific client
+   * @param object $client
+   * @param string $warningmsg
+   */
   private function send_warning_to_client($client, $warningmsg)
   {
     $client->send(json_encode(
@@ -826,6 +1113,11 @@ class GameInstance
       )));
   }
 
+  /**
+   * Send a error message to a specific client
+   * @param object $client
+   * @param string $errormsg
+   */
   private function send_error_to_client($client, $errormsg)
   {
     $client->send(json_encode(
@@ -835,6 +1127,9 @@ class GameInstance
       )));
   }
 
+  /**
+   * Reset game to default
+   */
   private function reset_all()
   {
     $this->generate_map();
@@ -849,13 +1144,19 @@ class GameInstance
     $this->colors = array(self::COLOR_WHITE, self::COLOR_BLACK);
     $this->step = 0;
     $this->turn_count = 0;
+    $this->game_over = false;
   }
 
-  private function send_action_to_client($client, $action)
+  /**
+   * Answer on an map_request message
+   * @param object $client
+   * @param string $action
+   */
+  private function send_map_delivery($client)
   {
     $client->send(json_encode(
       array(
-        "action" => $action,
+        "action" => "map_delivery",
         "active_user" => $this->current_turn,
         "color" => $this->current_connections[$client->getPort()]['color'],
         "map" => $this->map,
@@ -863,6 +1164,10 @@ class GameInstance
       )));
   }
 
+  /**
+   * Send data to all clients
+   * @param array $aMessage
+   */
   private function send_to_all( $aMessage ) {
     foreach($this->current_connections as $client)
     {
@@ -870,11 +1175,18 @@ class GameInstance
     }
   }
 
+  /**
+   * Returns the defeated figures as json string
+   * @return string json
+   */
   private function get_defeated_figures()
   {
     return json_encode($this->defeated_figures);
   }
 
+  /**
+   * Interval function will be called repeatedly several times per second
+   */
   private function do_step()
   {
     switch($this->step)
@@ -899,8 +1211,9 @@ class GameInstance
     }
   }
 
-
-
+  /**
+   * Generates the default map
+   */
   private function generate_map()
   {
     $origin = self::COLOR_WHITE;
@@ -959,5 +1272,4 @@ class GameInstance
       }
     }
   }
-
 }

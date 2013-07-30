@@ -18,7 +18,7 @@
     </form>
 
     <form action="#" id="networkForm">
-      <input type="text" id="host" value="ws://lambada.no-ip.biz:8000/chess"> <!-- 192.168.105.41 -->
+      <input type="text" id="host" value="ws://127.0.0.1:8000/chess"> <!-- 192.168.105.41 -->
 
       <button id="connect" type="button" class="btn btn-action">
         <i class="icon-refresh icon-black"></i> Connect
