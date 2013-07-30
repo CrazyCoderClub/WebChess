@@ -14,6 +14,7 @@ class GameInstance
   private $current_turn = self::COLOR_WHITE;
   private $colors = array(self::COLOR_WHITE, self::COLOR_BLACK);
   private $turn_count = 0;
+  private $game_over = false;
   private $defeated_figures = array(
     self::COLOR_WHITE => array(),
     self::COLOR_BLACK => array()
@@ -86,6 +87,12 @@ class GameInstance
         {
           $this->send_action_to_client($connection, "map_delivery");
           $this->send_warning_to_client($connection, "It's not your turn, please wait ...");
+          break;
+        }
+
+        if($this->game_over === true)
+        {
+          $this->send_warning_to_client($connection, "The game is over if you want to play again reconnect to the server.");
           break;
         }
         $from = $msg['from'];
@@ -287,7 +294,8 @@ class GameInstance
       $szWinner = self::COLOR_WHITE;
     }
 
-    if( !empty( $szWinner ) ) {
+    if( !empty( $szWinner ) )
+    {
       $this->send_to_all(array(
         'action' => 'gameover',
         'winner' => $szWinner,
@@ -295,6 +303,7 @@ class GameInstance
           'turns' => $this->turn_count,
         )
       ));
+      $this->game_over = true;
     }
   }
 
