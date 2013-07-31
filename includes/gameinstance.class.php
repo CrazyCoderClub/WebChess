@@ -1200,6 +1200,7 @@ class GameInstance
     $this->colors = array(self::COLOR_WHITE, self::COLOR_BLACK);
     $this->step = 0;
     $this->turn_count = 0;
+    $this->current_turn = self::COLOR_WHITE;
     $this->game_over = false;
   }
 
