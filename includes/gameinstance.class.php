@@ -137,11 +137,21 @@ class GameInstance
     foreach( $this->map as $iFieldPosition => $aMapItem ) {
       if( !empty($aMapItem['type']) && $aMapItem['type'] == 'K' ) {
 
-        if( $this->checkFieldInDanger( self::COLOR_BLACK, $iFieldPosition ) ) {
-          $this->echo_msg_to_users("check!", self::COLOR_WHITE);
+        if( $this->checkFieldInDanger( self::COLOR_BLACK, $iFieldPosition, $iFieldPosition ) ) {
+          $bCheckmate = $this->is_checkmate( self::COLOR_BLACK, $iFieldPosition );
+          if( $bCheckmate ) {
+            $this->echo_msg_to_users("CHECKMATE!", self::COLOR_WHITE);
+          } else {
+            $this->echo_msg_to_users("CHECK!", self::COLOR_WHITE);
+          }
           break;
-        } elseif( $this->checkFieldInDanger( self::COLOR_WHITE, $iFieldPosition ) ) {
-          $this->echo_msg_to_users("check!", self::COLOR_BLACK);
+        } elseif( $this->checkFieldInDanger( self::COLOR_WHITE, $iFieldPosition, $iFieldPosition ) ) {
+          $bCheckmate = $this->is_checkmate( self::COLOR_WHITE, $iFieldPosition );
+          if( $bCheckmate ) {
+            $this->echo_msg_to_users("CHECKMATE!", self::COLOR_BLACK);
+          } else {
+            $this->echo_msg_to_users("CHECK!", self::COLOR_BLACK);
+          }
           break;
         }
 
@@ -400,14 +410,18 @@ class GameInstance
   }
 
   /**
-   * Returns ture if the filed can be conquered
-   * @param string $origin
-   * @param int $iPositionDefender
+   * Returns ture if the filed can be conquered by opponent
+   * @param string $origin color
+   * @param int $iFrom map index
+   * @param int $iPositionDefender map index
    * @return bool
    */
-  private function checkFieldInDanger( $origin, $iPositionDefender ) {
-    // function does not work correctly :(
-    return false;
+  private function checkFieldInDanger( $origin, $iFrom, $iPositionDefender ) {
+    $aTempMap = $this->map;
+
+    if( $iFrom != $iPositionDefender ) {
+      $this->update_field_changes( $iFrom, $iPositionDefender, $this->map[$iFrom]['type'] );
+    }
 
     $oldOrigin = $this->current_turn;
     $this->current_turn = $this->get_opponent( $origin );
@@ -418,11 +432,13 @@ class GameInstance
 
         if( $bAllowed ) {
           $this->current_turn = $oldOrigin;
+          $this->map = $aTempMap;
           return true;
         }
       }
     }
     $this->current_turn = $oldOrigin;
+    $this->map = $aTempMap;
     return false;
   }
 
@@ -507,7 +523,7 @@ class GameInstance
     $allowed = $this->is_move_queen_allowed( $from, $to );
 
     $movement_result['success'] = false;
-    $movement_result['msg'] = "You're queen is not allowed to move to this position.";
+    $movement_result['msg'] = "Your queen is not allowed to move to this position.";
 
     if($allowed)
     {
@@ -604,7 +620,7 @@ class GameInstance
     $allowed = $this->is_move_bishop_allowed( $from, $to );
 
     $movement_result['success'] = false;
-    $movement_result['msg'] = "You're bishop is not allowed to move to this position.";
+    $movement_result['msg'] = "Your bishop is not allowed to move to this position.";
 
     if($allowed)
     {
@@ -659,7 +675,7 @@ class GameInstance
     $allowed = $this->is_move_knight_allowed( $from, $to );
 
     $movement_result['success'] = false;
-    $movement_result['msg'] = "You're knight is not allowed to move to this position.";
+    $movement_result['msg'] = "Your knight is not allowed to move to this position.";
 
     if($allowed)
     {
@@ -743,7 +759,7 @@ class GameInstance
     $allowed = $this->is_move_rook_allowed($from, $to);
 
     $movement_result['success'] = false;
-    $movement_result['msg'] = "You're rook is not allowed to move to this position.";
+    $movement_result['msg'] = "Your rook is not allowed to move to this position.";
 
     if($allowed)
     {
@@ -815,6 +831,38 @@ class GameInstance
   }
 
   /**
+   * Returns true if from is checkmate
+   * @param string $origin color
+   * @param int $from map index
+   */
+  private function is_checkmate( $origin, $from ) {
+    $bCheckmate = true;
+
+    $aTargets = array(
+      $from - 9,
+      $from - 8,
+      $from - 7,
+      $from - 1,
+      $from + 1,
+      $from + 7,
+      $from + 8,
+      $from + 9,
+    );
+
+    foreach( $aTargets as $iTarget ) {
+      if( $iTarget >= 0 && $iTarget <= 63 ) {
+        if( $this->is_move_king_allowed($from, $iTarget) ) {
+          if( !$this->checkFieldInDanger( $origin, $from, $iTarget ) ) {
+            $bCheckmate = false;
+          }
+        }
+      }
+    }
+
+    return $bCheckmate;
+  }
+
+  /**
    * Moves the king
    * @param int $from
    * @param int $to
@@ -827,16 +875,24 @@ class GameInstance
     $movement_result = array();
 
     if( $allowed ) {
-      if( $this->checkFieldInDanger( $this->current_turn, $to ) ) {
-        $movement_result['success'] = false;
-        $movement_result['msg'] = 'Your King can not be moved to a field where he can be conquered';
+      if( $this->checkFieldInDanger( $this->current_turn, $from, $to ) ) {
+        // ---------------------------------------------------------------------------------------------
 
-        return $movement_result;
+        $bCheckmate = $this->is_checkmate( $this->current_turn, $from );
+
+        if( !$bCheckmate ) {
+          $movement_result['success'] = false;
+          $movement_result['msg'] = 'Your King can not be moved to a field where he can be conquered';
+
+          return $movement_result;
+        }
+
+        // ---------------------------------------------------------------------------------------------
       }
     }
 
     $movement_result['success'] = false;
-    $movement_result['msg'] = "You're king is not permitted to go there.";
+    $movement_result['msg'] = "Your king is not permitted to go there.";
 
     // TODO: Find a better way to check for castling for the king
     if(!$allowed)

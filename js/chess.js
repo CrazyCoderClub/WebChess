@@ -209,7 +209,7 @@ Game.prototype.isGameStarted = function() {
 
 Game.prototype.log = function( msg ) {
   var currentdate = new Date();
-  $('#gameLog').prepend( "["+ ('0'+currentdate.getHours()).slice(-2) +":" + ('0'+currentdate.getMinutes()).slice(-2) + ":" + ('0'+currentdate.getSeconds()).slice(-2) +"] " + msg + "\n" );
+  $('#gameLog').prepend( '<span class="chatTime">['+ ('0'+currentdate.getHours()).slice(-2) +":" + ('0'+currentdate.getMinutes()).slice(-2) + ":" + ('0'+currentdate.getSeconds()).slice(-2) +"] </span>" + msg + "\n" );
 }
 
 // ---------------------------------------------------------------------------
