@@ -1211,12 +1211,21 @@ class GameInstance
    */
   private function send_map_delivery($client)
   {
+    $aMap = array();
+
+    foreach( $this->map as $aMapItem ) {
+      $aMap[] = array(
+        'type'    => $aMapItem['type'],
+        'origin'  => $aMapItem['origin']
+      );
+    }
+
     $client->send(json_encode(
       array(
         "action" => "map_delivery",
         "active_user" => $this->current_turn,
         "color" => $this->current_connections[$client->getPort()]['color'],
-        "map" => $this->map,
+        "map" => $aMap,
         "defeated" => $this->get_defeated_figures()
       )));
   }

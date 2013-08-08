@@ -18,18 +18,14 @@
     </form>
 
     <form action="#" id="networkForm">
-      <input type="text" id="host" value="ws://xardaska-network-system.net:8000/chess">
+      <select id="host">
+        <option value="">[choose server]</option>
+        <option value="ws://xardaska-network-system.net:8000/chess">xardaska-network-system.net</option>
+        <option value="ws://127.0.0.1:8000/chess">localhost</option>
+      </select>
 
       <button id="connect" type="button" class="btn btn-action">
-        <i class="icon-refresh icon-black"></i> Connect
-      </button>
-
-      <button id="disconnect" type="button" class="btn btn-action">
-        <i class="icon-off icon-black"></i> Disconnect
-      </button>
-
-      <button id="showLog" type="button" class="btn btn-action">
-        <i class="icon-list icon-black"></i> Log
+        <i class="icon-refresh icon-black"></i> <span>Connect</span>
       </button>
     </form>
   </div>

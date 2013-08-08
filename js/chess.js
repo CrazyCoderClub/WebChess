@@ -9,15 +9,11 @@ window.onbeforeunload = function() {
 
 $(document).ready(function(){
   $('#connect').on('click',function(){
-    game.connect( $('#host').val() );
-  });
-
-  $('#disconnect').on('click',function(){
-    game.disconnect();
-  });
-
-  $('#showLog').on('click',function(){
-    $('#log').toggle();
+    if( game.isConnected ) {
+      game.disconnect();
+    } else {
+      game.connect( $('#host').val() );
+    }
   });
 
   $('#MsgSendButton').on('click', function(e)
@@ -25,7 +21,14 @@ $(document).ready(function(){
     if($('#MsgSendField').length == 1)
     {
       if( $('#MsgSendField').val() != '' ) {
-        game.send_user_msg($('#MsgSendField').val());
+        switch( $('#MsgSendField').val() ) {
+          case 'log':
+            $('#log').toggle();
+            break;
+
+          default:
+            game.send_user_msg($('#MsgSendField').val());
+        }
         $('#MsgSendField').val("");
       }
     }
@@ -92,6 +95,8 @@ Game.prototype.connect = function( target ) {
     self.log("connected ... welcome");
 
     self.isConnected = true;
+
+    $('#connect').find('span').text('Disconnect');
   };
 
   websocket.onmessage = function( event ) {
@@ -185,6 +190,7 @@ Game.prototype.connect = function( target ) {
     log("Connection is closed...");
     self.log("Connection is closed ... disconnected");
     self.isConnected = false;
+    $('#connect').find('span').text('Connect');
   };
 
   websocket.onerror = function( event ) {

@@ -69,6 +69,10 @@
   display: none;
 }
 
+#showLog {
+  display: none;
+}
+
 table td {
   vertical-align: top;
 }
@@ -98,6 +102,15 @@ form input {
   float: left;
 }
 
+#host {
+  margin: 0 5px 0 0;
+  width: 412px;
+}
+
+#connect {
+  width: 115px;
+}
+
 @media screen and (max-width: 1199px){
   #gameLogHolder {
     height: 150px;
@@ -108,7 +121,72 @@ form input {
   }
 }
 
-@media screen and (max-width: 617px){
+@media screen and ( min-width: 450px ) and ( max-width: 768px ){
+  h1 {
+    font-size: 24px;
+  }
+
+  #map {
+    display: inline-block;
+    width: 400px;
+    height: 400px;
+  }
+
+  .mapField {
+    min-height: 38px;
+    height: 38px;
+    min-width: 38px;
+    width: 38px;
+    font-size: 38px;
+    line-height: 38px;
+  }
+
+  .mapLabel {
+    width: 40px;
+    height: 40px;
+    font-size: 24px;
+  }
+
+  #gameLogHolder {
+    margin: 0;
+    width: 370px;
+  }
+
+  #gameArea, #infoArea {
+    min-width: inherit;
+  }
+
+  #networkForm, #chatForm {
+    margin: 10px 0 0 0px
+  }
+
+  #MsgSendField {
+    width: 277px;
+  }
+
+  #networkForm input {
+    width: 243px;
+  }
+
+  #networkForm {
+    margin: 10px auto 0 auto;
+    width: 400px;
+  }
+
+  .chatTime {
+    display: none;
+  }
+
+  #host {
+    width: 272px;
+  }
+}
+
+@media screen and ( max-width: 450px ) {
+  h1 {
+    font-size: 17px;
+  }
+
   #map {
     display: inline-block;
     width: 270px;
@@ -151,7 +229,21 @@ form input {
     width: 243px;
   }
 
+  #networkForm {
+    margin: 10px auto 0 auto;
+    width: 260px;
+  }
+
+  #showLog {
+    display: none;
+  }
+
   .chatTime {
     display: none;
   }
+
+  #host {
+    width: 132px;
+  }
 }
+
