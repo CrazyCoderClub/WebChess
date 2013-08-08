@@ -48,7 +48,7 @@ header("Content-Type: text/html; charset=utf-8");
           <div class="nav-collapse collapse">
             <ul class="nav">
             <?php if( empty( $_GET['action'] ) || $_GET['action'] == 'game' ) { ?>
-              <li class="active"><a href="/game">Game</a></li>
+              <li class="active"><a href="?action=game">Game</a></li>
               <li><a href="?action=about">About</a></li>
             <?php } elseif( $_GET['action'] == 'about' ) { ?>
               <li><a href="?action=game">Game</a></li>
