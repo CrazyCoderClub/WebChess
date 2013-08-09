@@ -45,13 +45,14 @@ function log( msg ) {
   $('#log').prepend( msg + "\n------------------------------\n" );
 }
 
-function Game() {}
-Game.prototype.ws = null;
-Game.prototype.isConnected = false;
-Game.prototype.user = null;
-Game.prototype.activeUser = null;
-Game.prototype.started = false;
-Game.prototype.currentSelection = null;
+function Game() {
+  this.ws = null;
+  this.isConnected = false;
+  this.user = null;
+  this.activeUser = null;
+  this.started = false;
+  this.currentSelection = null;
+}
 
 Game.prototype.turn = function( from, to ) {
   this.ws.send( JSON.stringify({
@@ -220,20 +221,20 @@ Game.prototype.log = function( msg ) {
 
 // ---------------------------------------------------------------------------
 
-function Map() {}
-Map.prototype.mapData = null;
-Map.prototype.mapId = '#map';
+function Map() {
+  this.mapData = null;
+  this.mapId = '#map';
+  this._NamesAZ = new Array( 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H' );
+  this._Names13 = new Array( '1', '2', '3', '4', '5', '6', '7', '8' );
+}
 
 Map.prototype.update = function( map ) {
   this.mapData = map;
   this.render();
 }
 
-Map.prototype.NamesAZ = new Array( 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H' );
-Map.prototype.Names13 = new Array( '1', '2', '3', '4', '5', '6', '7', '8' );
-
 Map.prototype.getFieldName = function( index ) {
-  return this.NamesAZ[ index % 8 ] + this.Names13[ Math.floor( index / 8 ) ];
+  return this._NamesAZ[ index % 8 ] + this._Names13[ Math.floor( index / 8 ) ];
 }
 
 Map.prototype.getFigureSymbol = function( key, owner ) {
@@ -290,23 +291,25 @@ Map.prototype.getFigureSymbol = function( key, owner ) {
 Map.prototype.render = function() {
   $(this.mapId).html('');
 
+  var i;
+
   if( game.user && game.user == 'black' ) {
     $(this.mapId).append('<div class="mapField mapLabel"> </div>');
-    for( var i=0;i<8;i++ ) {
-      $(this.mapId).append('<div class="mapField mapLabel">' + this.NamesAZ[i] + '</div>');
+    for( i=0;i<8;i++ ) {
+      $(this.mapId).append('<div class="mapField mapLabel">' + this._NamesAZ[i] + '</div>');
     }
     $(this.mapId).append('<div class="mapField mapLabel"> </div>');
   } else {
     $(this.mapId).append('<div class="mapField mapLabel"> </div>');
-    for( var i=7;i>=0;i-- ) {
-      $(this.mapId).append('<div class="mapField mapLabel">' + this.NamesAZ[i] + '</div>');
+    for( i=7;i>=0;i-- ) {
+      $(this.mapId).append('<div class="mapField mapLabel">' + this._NamesAZ[i] + '</div>');
     }
     $(this.mapId).append('<div class="mapField mapLabel"> </div>');
   }
 
   var bar;
   var check;
-  var i;
+
   if( game.user && game.user == 'black' ) {
     i=0;
     bar = 0;
@@ -319,7 +322,7 @@ Map.prototype.render = function() {
 
   for( ;; ) {
     if( (i+bar) % 8 == 0 ) {
-      $(this.mapId).append('<div class="mapField mapLabel">' + this.Names13[Math.floor(i / 8)] + '</div>');
+      $(this.mapId).append('<div class="mapField mapLabel">' + this._Names13[Math.floor(i / 8)] + '</div>');
     }
 
     var origin = this.mapData != null ? this.mapData[i].origin : '';
@@ -332,7 +335,7 @@ Map.prototype.render = function() {
     $(this.mapId).append('<div id="field_'+i+'" class="mapField mapField_' + ( ( i + Math.floor( i / 8) % 2 ) % 2 ? 'black' : 'white' ) + ' fieldType_' + origin + '">' + type + '</div>');
 
     if( (i+bar) % 8 == check ) {
-      $(this.mapId).append('<div class="mapField mapLabel">' + this.Names13[Math.floor(i / 8)] + '</div>');
+      $(this.mapId).append('<div class="mapField mapLabel">' + this._Names13[Math.floor(i / 8)] + '</div>');
     }
 
     if( game.user && game.user == 'black' ) {
@@ -347,13 +350,13 @@ Map.prototype.render = function() {
   if( game.user && game.user == 'black' ) {
     $(this.mapId).append('<div class="mapField mapLabel"> </div>');
     for( var i=0;i<8;i++ ) {
-      $(this.mapId).append('<div class="mapField mapLabel">' + this.NamesAZ[i] + '</div>');
+      $(this.mapId).append('<div class="mapField mapLabel">' + this._NamesAZ[i] + '</div>');
     }
     $(this.mapId).append('<div class="mapField mapLabel"> </div>');
   } else {
     $(this.mapId).append('<div class="mapField mapLabel"> </div>');
     for( var i=7;i>=0;i-- ) {
-      $(this.mapId).append('<div class="mapField mapLabel">' + this.NamesAZ[i] + '</div>');
+      $(this.mapId).append('<div class="mapField mapLabel">' + this._NamesAZ[i] + '</div>');
     }
     $(this.mapId).append('<div class="mapField mapLabel"> </div>');
   }
