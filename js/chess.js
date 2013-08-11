@@ -365,14 +365,14 @@ Map.prototype.render = function() {
     game.log("<b>" + game.activeUser + "'s turn</b>");
   }
   
-  $('.mapField').on('click',function(){
+  $('.mapField').not('.mapLabel').on('click',function(){
     if( game.currentSelection != this && game.currentSelection == null ) {
       game.currentSelection = this;
       $(this).addClass('fieldActive');
     } else if( game.currentSelection == this ) {
       game.currentSelection = null;
       $('.mapField').removeClass('fieldActive');
-    } else if( game.currentSelection != this && game.currentSelection != null ) {
+    } else if( game.currentSelection != this && game.currentSelection != null && game.currentSelection) {
       var from = $( game.currentSelection ).attr('id').replace(/field_/, '');
       var to = $( this ).attr('id').replace(/field_/, '');
 
