@@ -205,13 +205,9 @@ class GameInstance
   {
     foreach($this->current_connections as $client)
     {
-      if( mb_detect_encoding( $msg ) != 'UTF-8' ) {
-        $msg = utf8_encode( $msg );
-      }
-
       $client['connection']->send(json_encode(array(
         "action" => "user_msg",
-        "msg" => htmlentities($msg),
+        "msg" => htmlentities( $msg, ENT_QUOTES, ( mb_detect_encoding( $msg ) != 'UTF-8' ? 'ISO-8859-1' : 'UTF-8' ) ),
         "from" => $from
       )));
     }
