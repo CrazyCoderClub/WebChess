@@ -120,6 +120,40 @@ Game.prototype.connect = function( target ) {
         self.log('game started');
         break;
 
+      case 'check':
+        var logmsg = "";
+        if(json.from != game.user)
+        {
+          logmsg += json.from + ": ";
+        } else {
+          logmsg += "you: ";
+        }
+
+        if( json.type == 'CHECK' ) {
+          logmsg += "CHECK";
+        } else if( json.type == 'CHECKMATE' ) {
+          logmsg += "CHECKMATE";
+        }
+
+        var origin = map.mapData != null ? map.mapData[json.checked].origin : '';
+        var type = map.mapData != null ? map.mapData[json.checked].type : '';
+        logmsg += " " + map.getFigureSymbol( type, origin ) + " " + map.getFieldName( json.checked ) + " by ";
+
+        for( var i=0; i<json.checkers.length; i++ ) {
+          var origin = map.mapData != null ? map.mapData[json.checkers[i]].origin : '';
+          var type = map.mapData != null ? map.mapData[json.checkers[i]].type : '';
+          logmsg += map.getFigureSymbol( type, origin ) + " ";
+          logmsg += map.getFieldName( json.checkers[i] );
+          if( i < json.checkers.length-1 ) {
+            logmsg += ", ";
+          }
+        }
+
+        logmsg += "!";
+
+        self.log( logmsg );
+        break;
+
       case 'gameover':
         self.log( "GAME OVER - " + json.winner + " wins after " + json.stats.turns + " turns" );
         break;

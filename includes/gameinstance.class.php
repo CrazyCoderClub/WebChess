@@ -136,21 +136,20 @@ class GameInstance
   private function sendCheckIfNecessary() {
     foreach( $this->map as $iFieldPosition => $aMapItem ) {
       if( !empty($aMapItem['type']) && $aMapItem['type'] == 'K' ) {
-
-        if( $this->checkFieldInDanger( self::COLOR_BLACK, $iFieldPosition, $iFieldPosition ) ) {
+        if( $aCheckers = $this->checkFieldInDanger( self::COLOR_BLACK, $iFieldPosition, $iFieldPosition ) ) {
           $bCheckmate = $this->is_checkmate( self::COLOR_BLACK, $iFieldPosition );
           if( $bCheckmate ) {
-            $this->echo_msg_to_users("CHECKMATE!", self::COLOR_WHITE);
+            $this->check_msg_to_users("CHECKMATE", self::COLOR_WHITE, $iFieldPosition, $aCheckers );
           } else {
-            $this->echo_msg_to_users("CHECK!", self::COLOR_WHITE);
+            $this->check_msg_to_users("CHECK", self::COLOR_WHITE, $iFieldPosition, $aCheckers);
           }
           break;
-        } elseif( $this->checkFieldInDanger( self::COLOR_WHITE, $iFieldPosition, $iFieldPosition ) ) {
+        } elseif( $aCheckers = $this->checkFieldInDanger( self::COLOR_WHITE, $iFieldPosition, $iFieldPosition ) ) {
           $bCheckmate = $this->is_checkmate( self::COLOR_WHITE, $iFieldPosition );
           if( $bCheckmate ) {
-            $this->echo_msg_to_users("CHECKMATE!", self::COLOR_BLACK);
+            $this->check_msg_to_users("CHECKMATE", self::COLOR_BLACK, $iFieldPosition, $aCheckers);
           } else {
-            $this->echo_msg_to_users("CHECK!", self::COLOR_BLACK);
+            $this->check_msg_to_users("CHECK", self::COLOR_BLACK, $iFieldPosition, $aCheckers);
           }
           break;
         }
@@ -209,6 +208,20 @@ class GameInstance
         "action" => "user_msg",
         "msg" => htmlentities( $msg, ENT_QUOTES, ( mb_detect_encoding( $msg ) != 'UTF-8' ? 'ISO-8859-1' : 'UTF-8' ) ),
         "from" => $from
+      )));
+    }
+  }
+
+  private function check_msg_to_users( $type, $from, $checked, $checkers)
+  {
+    foreach($this->current_connections as $client)
+    {
+      $client['connection']->send(json_encode(array(
+        "action" => "check",
+        "type" => $type,
+        "from" => $from,
+        "checked" => $checked,
+        "checkers" => $checkers
       )));
     }
   }
@@ -410,14 +423,16 @@ class GameInstance
   }
 
   /**
-   * Returns ture if the filed can be conquered by opponent
+   * Returns array with checkers if the filed can be conquered by opponent
    * @param string $origin color
    * @param int $iFrom map index
    * @param int $iPositionDefender map index
-   * @return bool
+   * @return array
    */
   private function checkFieldInDanger( $origin, $iFrom, $iPositionDefender ) {
     $aTempMap = $this->map;
+
+    $aAttackerFields = array();
 
     if( $iFrom != $iPositionDefender ) {
       $this->update_field_changes( $iFrom, $iPositionDefender, $this->map[$iFrom]['type'] );
@@ -431,15 +446,16 @@ class GameInstance
         $bAllowed = $this->is_move_allowed( $aMapItem['type'], $iPositionAttacker, $iPositionDefender );
 
         if( $bAllowed ) {
-          $this->current_turn = $oldOrigin;
           $this->map = $aTempMap;
-          return true;
+
+          $aAttackerFields[] = $iPositionAttacker;
         }
       }
     }
+
     $this->current_turn = $oldOrigin;
     $this->map = $aTempMap;
-    return false;
+    return $aAttackerFields;
   }
 
   /**
@@ -852,7 +868,7 @@ class GameInstance
     foreach( $aTargets as $iTarget ) {
       if( $iTarget >= 0 && $iTarget <= 63 ) {
         if( $this->is_move_king_allowed($from, $iTarget) ) {
-          if( !$this->checkFieldInDanger( $origin, $from, $iTarget ) ) {
+          if( count( $this->checkFieldInDanger( $origin, $from, $iTarget ) ) == 0 ) {
             $bCheckmate = false;
           }
         }
@@ -875,7 +891,7 @@ class GameInstance
     $movement_result = array();
 
     if( $allowed ) {
-      if( $this->checkFieldInDanger( $this->current_turn, $from, $to ) ) {
+      if( count( $this->checkFieldInDanger( $this->current_turn, $from, $to ) ) > 0 ) {
         // ---------------------------------------------------------------------------------------------
 
         $bCheckmate = $this->is_checkmate( $this->current_turn, $from );
