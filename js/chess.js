@@ -36,6 +36,26 @@ $(document).ready(function(){
     e.preventDefault();
   });
 
+  $('.send-actions li a').on('click',function(e){
+    e.preventDefault();
+
+    switch( $(this).attr('id') ) {
+      case 'send-action-ohno':
+        var arr = [
+          'F☠☠k!',
+          'Sh☠t!',
+          'Da☠n!'
+        ];
+
+        $('#MsgSendField').val( $('#MsgSendField').val() + arr[ Math.floor( Math.random() * 3 ) ] );
+        $('#MsgSendButton').trigger('click');
+        break;
+      case 'send-action-giveup':
+        game.send_i_give_up();
+        break;
+    }
+  });
+
   map.render();
 });
 
@@ -60,6 +80,17 @@ Game.prototype.turn = function( from, to ) {
     from: from,
     to: to
   }) );
+}
+
+Game.prototype.send_i_give_up = function()
+{
+  if(this.ws)
+  {
+    this.ws.send( JSON.stringify({
+      action: 'user_gave_up',
+      user: game.user
+    }));
+  }
 }
 
 Game.prototype.send_user_msg = function( msg )
@@ -198,6 +229,10 @@ Game.prototype.connect = function( target ) {
       case 'error':
         log("ServerError: " + json.msg );
         self.log( "ServerError: " + json.msg );
+        break;
+
+      case 'user_gave_up':
+        game.log( json.user + " surrendered!" );
         break;
 
       case 'user_msg':

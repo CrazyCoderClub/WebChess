@@ -122,6 +122,15 @@ class GameInstance
         }
         break;
 
+      case 'user_gave_up':
+        $this->send_to_all(array(
+          'action' => 'user_gave_up',
+          'user' => $msg['user']
+        ));
+
+        $this->gameover( $this->get_opponent( $msg['user'] ) );
+        break;
+
       case 'user_msg':
         if( !empty($msg['msg']) ) {
           $this->echo_msg_to_users($msg['msg'], $msg['from']);
@@ -484,15 +493,24 @@ class GameInstance
 
     if( !empty( $szWinner ) )
     {
-      $this->send_to_all(array(
-        'action' => 'gameover',
-        'winner' => $szWinner,
-        'stats' => array(
-          'turns' => $this->turn_count,
-        )
-      ));
-      $this->game_over = true;
+      $this->gameover( $szWinner );
     }
+  }
+
+  /**
+   * End the game and send messages to all players
+   * @param $szWinner
+   */
+  private function gameover( $szWinner ) {
+    $this->send_to_all(array(
+      'action' => 'gameover',
+      'winner' => $szWinner,
+      'stats' => array(
+        'turns' => $this->turn_count,
+      )
+    ));
+
+    $this->game_over = true;
   }
 
   /**
@@ -850,8 +868,11 @@ class GameInstance
    * Returns true if from is checkmate
    * @param string $origin color
    * @param int $from map index
+   * @return bool
    */
   private function is_checkmate( $origin, $from ) {
+    return false; // because this is not correct implemented
+
     $bCheckmate = true;
 
     $aTargets = array(
@@ -891,7 +912,7 @@ class GameInstance
     $movement_result = array();
 
     if( $allowed ) {
-      if( count( $this->checkFieldInDanger( $this->current_turn, $from, $to ) ) > 0 ) {
+      if( count( $this->checkFieldInDanger( $this->current_turn, $from, $to ) ) > 0 && false ) {
         // ---------------------------------------------------------------------------------------------
 
         $bCheckmate = $this->is_checkmate( $this->current_turn, $from );

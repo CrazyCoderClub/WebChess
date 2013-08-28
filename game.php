@@ -12,9 +12,18 @@
 
     <form action="#" id="chatForm">
       <input type="text" id="MsgSendField" placeholder="Enter your message ...">
-      <button id="MsgSendButton" type="submit" class="btn btn-primary">
-        <i class="icon-comment icon-white"></i> Send
-      </button>
+      <div class="btn-group">
+        <button id="MsgSendButton" type="submit" class="btn btn-primary">
+          <i class="icon-comment icon-white"></i> Send
+        </button>
+        <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+          <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu send-actions">
+          <li><a id="send-action-ohno" href="#">Oh no!</a></li>
+          <li><a id="send-action-giveup" href="#">I give up</a></li>
+        </ul>
+      </div>
     </form>
 
     <form action="#" id="networkForm">
