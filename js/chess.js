@@ -42,9 +42,9 @@ $(document).ready(function(){
     switch( $(this).attr('id') ) {
       case 'send-action-ohno':
         var arr = [
-          'F☠☠k!',
-          'Sh☠t!',
-          'Da☠n!'
+          "F**k!",
+          "Sh*t!",
+          "Da*n!"
         ];
 
         $('#MsgSendField').val( $('#MsgSendField').val() + arr[ Math.floor( Math.random() * 3 ) ] );
