@@ -797,13 +797,23 @@ class GameInstance
 
     if($allowed)
     {
-      $this->update_field_changes($from, $to, "T");
       $movement_result['success'] = true;
     }
 
+    $bCastling = false;
     if(!$movement_result['success'])
     {
-      $movement_result['success'] = $this->check_castling($from, $to);
+      $bCastling = $this->check_castling($from, $to);
+    }
+
+    if($bCastling)
+    {
+      $movement_result['success'] = true;
+      $this->update_field_changes($from, $to, "T", false);
+    }
+    else
+    {
+        $this->update_field_changes($from, $to, "T");
     }
 
     if($movement_result['success'])
